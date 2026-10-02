@@ -2,7 +2,7 @@ import heapq
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import tabulate as tabulate
 T_str = 7
 T_end = 23
 DAYS = 7
@@ -100,12 +100,12 @@ df = pd.DataFrame(rows)
 best_k = int(df.loc[df["Rnp"].idxmax(), "K"])
 best_rnp = df.loc[df["K"] == best_k, "Rnp"].iloc[0]
 
-print(df.round(2).to_string(index=False))
+print(df.round(2).to_markdown(index=False, tablefmt="grid"))
 print(f"\nОптимальна кількість поверхів: K = {best_k}")
 
 df.to_excel("parking_results.xlsx", index=False)
 
-plt.plot(df["K"], df["Rnp"], marker="o", color="red")
+plt.plot(df["K"], df["Rnp"], marker="o", color = "red")
 plt.scatter(best_k, best_rnp, color="red", s=120, label=f"Оптимум K={best_k}")
 plt.title("Чистий прибуток залежно від кількості поверхів")
 plt.xlabel("K")
