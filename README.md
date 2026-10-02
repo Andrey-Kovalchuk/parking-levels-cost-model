@@ -56,5 +56,5 @@ The model executes $N = 100$ Monte Carlo iterations per capacity level to evalua
 ##  Stack & Implementation
 
 * **Language:** Python 3.10+
-* **Libraries:** `numpy`, `pandas`, `matplotlib`, `heapq`[cite: 1]
-* **Event Handling:** Min-heap (`heapq`) priority queue to efficiently manage vehicle departure timestamps[cite: 1].
+* **Libraries:** `numpy`, `pandas`, `matplotlib`, `heapq`
+* **Event Handling:** Min-heap (`heapq`) priority queue to efficiently manage vehicle departure timestamps.
