@@ -85,6 +85,7 @@ def simulate_once(K):
         "Wcf": occupancy.max() / C * 100,
         "Rgr": revenue,
         "Rnp": revenue - costs,
+        "occupancy_history": occupancy,
     }
 
 
@@ -92,7 +93,7 @@ rows = []
 for K in K_VALUES:
     runs = pd.DataFrame([simulate_once(K) for _ in range(N_RUNS)])
     row = {"K": K}
-    row.update(runs.mean().to_dict())
+    row.update(runs.drop(columns=["occupancy_history"]).mean().to_dict())
     rows.append(row)
 
 df = pd.DataFrame(rows)
@@ -110,6 +111,25 @@ plt.scatter(best_k, best_rnp, color="red", s=120, label=f"Оптимум K={best
 plt.title("Чистий прибуток залежно від кількості поверхів")
 plt.xlabel("K")
 plt.ylabel("Rnp, грн/тиждень")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+
+
+
+# Гістограма 
+plt.figure(figsize=(10, 6))
+
+occupancy_data = runs["occupancy_history"].iloc[0]
+
+plt.hist(occupancy_data, bins=range(0, CARS_PER_FLOOR + 5, 2), color="skyblue", edgecolor="black")
+plt.title("Гістограма кількості запаркованих машин на парковці протягом тижня")
+plt.xlabel("Кількість запаркованих машин")
+plt.ylabel("години")
+
+#максимальна кількість парковачних місць на парковці
+plt.axvline(x=CARS_PER_FLOOR, color="red", linestyle="--", linewidth=2, label=f"максимальна вмісткість ({CARS_PER_FLOOR})")
+
 plt.legend()
 plt.grid(alpha=0.3)
 plt.show()
