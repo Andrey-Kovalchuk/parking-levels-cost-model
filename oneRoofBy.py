@@ -11,14 +11,19 @@ N_RUNS = 100
 E_S = 2            # Average car stay
 P = 50             # Tarif
 V = 50000          # Budget monthly
-V_WEEKLY = V / 4
-SEED = 42          # Random seed
-K_FLOORS = 1
+WEEKS_PER_MONTH = 52 / 12
 CARS_PER_FLOOR = 50
-K_VALUES = [1]
+K_VALUES = [1] 
 
-rng = np.random.default_rng(SEED)
+# лист витрат 
+Tax = 0.23 #  налог на прибуток
+security = 50000 # охорона
+Facility = 10000  # загальне обслуговування
+rng = np.random.default_rng()
 
+# приведення до 1 тижня 
+def to_week(x):
+    return x / WEEKS_PER_MONTH
 
 def get_lambda(d, t):
     # Calculate λ(d,t) according to day of the week and time
@@ -50,7 +55,7 @@ def simulate_once(K):
     for d in range(1, DAYS + 1):
         t = T_str
 
-        while t <= T_end:
+        while t < T_end:
             now = (d - 1) * 24 + t  # current time
             lam = get_lambda(d, t)
 
@@ -76,7 +81,10 @@ def simulate_once(K):
             t += DT
 
     occupancy = np.array(occupancy)
-    costs = K * V_WEEKLY
+    expenses = to_week(K * V + security + K * Facility)
+    profit_before_tax = revenue - expenses
+    tax = max(0, profit_before_tax) * Tax
+    net_profit = profit_before_tax - tax            
 
     return {
         "Scmp": served,
@@ -84,14 +92,15 @@ def simulate_once(K):
         "Wavg": occupancy.mean() / C * 100,
         "Wcf": occupancy.max() / C * 100,
         "Rgr": revenue,
-        "Rnp": revenue - costs,
+        "Rnp": net_profit,
         "occupancy_history": occupancy,
     }
 
-
+all_runs = {} 
 rows = []
 for K in K_VALUES:
     runs = pd.DataFrame([simulate_once(K) for _ in range(N_RUNS)])
+    all_runs[K] = runs
     row = {"K": K}
     row.update(runs.drop(columns=["occupancy_history"]).mean().to_dict())
     rows.append(row)
@@ -117,19 +126,18 @@ plt.show()
 
 
 
-# Гістограма 
+# Гістограма для оптимального K
+C_best = best_k * CARS_PER_FLOOR
+occupancy_data = all_runs[best_k]["occupancy_history"].iloc[0]
+
 plt.figure(figsize=(10, 6))
-
-occupancy_data = runs["occupancy_history"].iloc[0]
-
-plt.hist(occupancy_data, bins=range(0, CARS_PER_FLOOR + 5, 2), color="skyblue", edgecolor="black")
-plt.title("Гістограма кількості запаркованих машин на парковці протягом тижня")
+plt.hist(occupancy_data, bins=range(0, C_best + 5, max(1, C_best // 25)),
+         color="skyblue", edgecolor="black")
+plt.title(f"Гістограма кількості запаркованих машин (K = {best_k}, один прогон)")
 plt.xlabel("Кількість запаркованих машин")
 plt.ylabel("години")
-
-#максимальна кількість парковачних місць на парковці
-plt.axvline(x=CARS_PER_FLOOR, color="red", linestyle="--", linewidth=2, label=f"максимальна вмісткість ({CARS_PER_FLOOR})")
-
+plt.axvline(x=C_best, color="red", linestyle="--", linewidth=2,
+            label=f"максимальна вмісткість ({C_best})")
 plt.legend()
 plt.grid(alpha=0.3)
 plt.show()
