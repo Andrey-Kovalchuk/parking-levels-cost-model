@@ -7,13 +7,13 @@ T_str = 7
 T_end = 23
 DAYS = 7
 DT = 1             # Time step
-N_RUNS = 100
+N_RUNS = 1
 E_S = 2            # Average car stay
-P = 50             # Tarif
+P = 100             # Tarif
 V = 50000          # Budget monthly
 WEEKS_PER_MONTH = 52 / 12
 CARS_PER_FLOOR = 50
-K_VALUES = [1] 
+K_VALUES = range(1, 10) # кількість поверхів
 
 # лист витрат 
 Tax = 0.23 #  налог на прибуток
@@ -53,8 +53,12 @@ def simulate_once(K):
     occupancy = []
 
     for d in range(1, DAYS + 1):
+        
+        morning_time = (d - 1) * 24 + T_str
+        while parked and parked[0] <= morning_time:
+            heapq.heappop(parked)
         t = T_str
-
+        
         while t < T_end:
             now = (d - 1) * 24 + t  # current time
             lam = get_lambda(d, t)
@@ -81,7 +85,7 @@ def simulate_once(K):
             t += DT
 
     occupancy = np.array(occupancy)
-    expenses = to_week(K * V + security + K * Facility)
+    expenses = to_week(K*V + security + K * Facility)
     profit_before_tax = revenue - expenses
     tax = max(0, profit_before_tax) * Tax
     net_profit = profit_before_tax - tax            
