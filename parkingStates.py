@@ -1,14 +1,14 @@
-import sys
-import pandas as pd
-from tabulate import tabulate
-
-sys.stdout.reconfigure(encoding="utf-8")
-
-
 from oneRoofBy import (
     T_str, T_end, DAYS, E_S, P, V, CARS_PER_FLOOR, K_VALUES,
     Tax, security, Facility, get_lambda, to_week
 )
+import sys
+import pandas as pd
+from tabulate import tabulate
+import matplotlib.pyplot as plt
+
+sys.stdout.reconfigure(encoding="utf-8")
+
 
 M_QUEUE = 0     # довжина черги m (система з відмовами)
 METRICS = ["ro", "q_0", "p_vidmovy", "p_q", "Q", "A",
@@ -17,9 +17,12 @@ METRICS = ["ro", "q_0", "p_vidmovy", "p_q", "Q", "A",
 
 HOURS_WEEK = (T_end - T_str) * DAYS            # 112 робочих годин за тиждень
 LAMBDA = sum(get_lambda(d, t) for d in range(1, DAYS + 1)
-             for t in range(T_str, T_end)) / HOURS_WEEK    # λ = Σλ(d,t) / HOURS_WEEK, авт./год
-MU = 1 / E_S                                   # μ = 1 / E(S), авт./год на місце
-R = LAMBDA / MU                                # r = λ / μ, навантаження (Ерланг)
+             # λ = Σλ(d,t) / HOURS_WEEK, авт./год
+             for t in range(T_str, T_end)) / HOURS_WEEK
+# μ = 1 / E(S), авт./год на місце
+MU = 1 / E_S
+# r = λ / μ, навантаження (Ерланг)
+R = LAMBDA / MU
 
 
 def rho(c):
@@ -95,7 +98,7 @@ def hourly_net_profit(A, K):
     return profit - max(0.0, profit) * Tax
 
 
-# Розрахунок характеристик СМО для K поверхів (c = K·CARS_PER_FLOOR каналів) 
+# Розрахунок характеристик СМО для K поверхів (c = K·CARS_PER_FLOOR каналів)
 def analyze(K, m=M_QUEUE):
 
     c = K * CARS_PER_FLOOR
@@ -118,7 +121,7 @@ def analyze(K, m=M_QUEUE):
     }
 
 
-#print 
+# print
 def main():
     df = pd.DataFrame([analyze(K) for K in K_VALUES])
 
@@ -130,8 +133,36 @@ def main():
     print(f"lambda = {LAMBDA:.3f} авт./год, mu = {MU:.3f} авт./год, "
           f"r = {R:.3f} Ерл, m = {M_QUEUE}\n")
     print(tabulate(table, headers="keys", tablefmt="grid", floatfmt=".3f"))
-    print(f"\nОптимальна кількість поверхів: K = {int(best['K'])} ({int(best['c'])} місць)")
-    print(f"Чистий прибуток: D = {best['D']:.2f} грн/год ({best['Rnp_week']:.0f} грн/тиждень)")
+    print(
+        f"\nОптимальна кількість поверхів: K = {int(best['K'])} ({int(best['c'])} місць)")
+    print(
+        f"Чистий прибуток: D = {best['D']:.2f} грн/год ({best['Rnp_week']:.0f} грн/тиждень)")
+
+    c_values = df["c"]
+    revenue = df["D"]  # Почасова виручка
+    occupancy = df["k_zaniat"] / df["c"] * 100  # Завантаженість паркомісць, %
+
+    # Залежність погодинної виручки від кількості паркомісць
+    plt.figure(figsize=(8, 5))
+    plt.plot(c_values, revenue, marker="o")
+    plt.xlabel("Кількість паркомісць, од.")
+    plt.ylabel("Виручка, грн/год")
+    plt.title("Залежність чистого погодинного прибутку від кількості паркомісць")
+    plt.grid(True)
+    plt.xticks(c_values)
+    plt.tight_layout()
+    plt.show()
+
+    # Залежність завантаженості паркомісць від їх кількості
+    plt.figure(figsize=(8, 5))
+    plt.plot(c_values, occupancy, marker="o")
+    plt.xlabel("Кількість паркомісць, од.")
+    plt.ylabel("Завантаженість, %")
+    plt.title("Залежність завантаженості паркінгу від кількості паркомісць")
+    plt.grid(True)
+    plt.xticks(c_values)
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
