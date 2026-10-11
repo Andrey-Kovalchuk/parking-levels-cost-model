@@ -7,9 +7,9 @@ T_str = 7
 T_end = 23
 DAYS = 7
 DT = 1             # Time step
-N_RUNS = 1
+N_RUNS = 100
 E_S = 2            # Average car stay
-P = 100             # Tarif
+P = 100           # Tarif
 V = 50000          # Budget monthly
 WEEKS_PER_MONTH = 52 / 12
 CARS_PER_FLOOR = 50
@@ -58,7 +58,7 @@ def simulate_once(K):
         while parked and parked[0] <= morning_time:
             heapq.heappop(parked)
         t = T_str
-        
+
         while t < T_end:
             now = (d - 1) * 24 + t  # current time
             lam = get_lambda(d, t)
