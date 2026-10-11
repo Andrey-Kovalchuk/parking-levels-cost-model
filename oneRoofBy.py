@@ -100,48 +100,52 @@ def simulate_once(K):
         "occupancy_history": occupancy,
     }
 
-all_runs = {} 
-rows = []
-for K in K_VALUES:
-    runs = pd.DataFrame([simulate_once(K) for _ in range(N_RUNS)])
-    all_runs[K] = runs
-    row = {"K": K}
-    row.update(runs.drop(columns=["occupancy_history"]).mean().to_dict())
-    rows.append(row)
 
-df = pd.DataFrame(rows)
+def main():
+    all_runs = {} 
+    rows = []
+    for K in K_VALUES:
+        runs = pd.DataFrame([simulate_once(K) for _ in range(N_RUNS)])
+        all_runs[K] = runs
+        row = {"K": K}
+        row.update(runs.drop(columns=["occupancy_history"]).mean().to_dict())
+        rows.append(row)
 
-best_k = int(df.loc[df["Rnp"].idxmax(), "K"])
-best_rnp = df.loc[df["K"] == best_k, "Rnp"].iloc[0]
+    df = pd.DataFrame(rows)
 
-print(df.round(2).to_markdown(index=False, tablefmt="grid"))
-print(f"\nОптимальна кількість поверхів: K = {best_k}")
+    best_k = int(df.loc[df["Rnp"].idxmax(), "K"])
+    best_rnp = df.loc[df["K"] == best_k, "Rnp"].iloc[0]
 
-df.to_excel("parking_results.xlsx", index=False)
+    print(df.round(2).to_markdown(index=False, tablefmt="grid"))
+    print(f"\nОптимальна кількість поверхів: K = {best_k}")
 
-plt.plot(df["K"], df["Rnp"], marker="o", color = "red")
-plt.scatter(best_k, best_rnp, color="red", s=120, label=f"Оптимум K={best_k}")
-plt.title("Чистий прибуток залежно від кількості поверхів")
-plt.xlabel("K")
-plt.ylabel("Rnp, грн/тиждень")
-plt.legend()
-plt.grid(alpha=0.3)
-plt.show()
+    df.to_excel("parking_results.xlsx", index=False)
+
+    plt.plot(df["K"], df["Rnp"], marker="o", color = "red")
+    plt.scatter(best_k, best_rnp, color="red", s=120, label=f"Оптимум K={best_k}")
+    plt.title("Чистий прибуток залежно від кількості поверхів")
+    plt.xlabel("K")
+    plt.ylabel("Rnp, грн/тиждень")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.show()
+
+    # Гістограма для оптимального K
+    C_best = best_k * CARS_PER_FLOOR
+    occupancy_data = all_runs[best_k]["occupancy_history"].iloc[0]
+
+    plt.figure(figsize=(10, 6))
+    plt.hist(occupancy_data, bins=range(0, C_best + 5, max(1, C_best // 25)),
+             color="skyblue", edgecolor="black")
+    plt.title(f"Гістограма кількості запаркованих машин (K = {best_k}, один прогон)")
+    plt.xlabel("Кількість запаркованих машин")
+    plt.ylabel("години")
+    plt.axvline(x=C_best, color="red", linestyle="--", linewidth=2,
+                label=f"максимальна вмісткість ({C_best})")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.show()
 
 
-
-# Гістограма для оптимального K
-C_best = best_k * CARS_PER_FLOOR
-occupancy_data = all_runs[best_k]["occupancy_history"].iloc[0]
-
-plt.figure(figsize=(10, 6))
-plt.hist(occupancy_data, bins=range(0, C_best + 5, max(1, C_best // 25)),
-         color="skyblue", edgecolor="black")
-plt.title(f"Гістограма кількості запаркованих машин (K = {best_k}, один прогон)")
-plt.xlabel("Кількість запаркованих машин")
-plt.ylabel("години")
-plt.axvline(x=C_best, color="red", linestyle="--", linewidth=2,
-            label=f"максимальна вмісткість ({C_best})")
-plt.legend()
-plt.grid(alpha=0.3)
-plt.show()
+if __name__ == "__main__":
+    main()
